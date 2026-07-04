@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; line-height: 1.6; color: #333; background: #f0f2f5; padding: 20px; }
+        .contract-card { background: white; max-width: 700px; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        .section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .section-title { font-size: 1.1em; font-weight: bold; color: #1a73e8; margin-bottom: 15px; display: block; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        input[type="text"], input[type="email"], input[type="date"], input[type="number"], input[type="tel"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+        .agreement-box { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 2px solid #ddd; height: 250px; overflow-y: scroll; font-size: 0.85em; margin-bottom: 10px; word-break: keep-all; transition: border-color 0.3s; }
+        .required-star { color: #ff4d4f; }
+        /* Font size adjusted to 0.85em as requested */
+        .other-box { background: #fdfdfd; padding: 20px; border-radius: 6px; border: 1px solid #e0e0e0; min-height: 50px; height: auto; font-size: 0.85em; margin-bottom: 15px; line-height: 1.6; color: #444; display: flex; align-items: flex-start; gap: 12px; }
+        .other-box input[type="checkbox"] { transform: scale(1.3); margin-top: 3px; cursor: pointer; }
+        .payment-sentence { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #eee; font-size: 0.95em; line-height: 2.2; }
+        .inline-input { display: inline-block; width: auto !important; height: 35px; padding: 2px 8px !important; margin: 0 5px !important; vertical-align: middle; border: 1px solid #1a73e8 !important; }
+        .highlight-red { color: #ff4d4f; font-weight: bold; display: block; margin-top: 10px; }
+        .term-option { background: #f8f9fa; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .check-group { margin: 20px 0; display: flex; align-items: center; background: #e8f0fe; padding: 20px; border-radius: 6px; cursor: pointer; }
+        .check-group input { margin-right: 15px; transform: scale(1.4); cursor: pointer; }
+       
+        #signature-area { display: none; text-align: center; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
+        #sig-preview-img { border: 1px solid #ccc; background: #fff; border-radius: 8px; width: 100%; max-width: 450px; height: auto; }
+       
+        .sig-info { display: flex; justify-content: space-between; max-width: 450px; margin: 10px auto; font-size: 0.9em; font-weight: bold; }
+        .btn-submit { background: #1a73e8; color: white; width: 100%; padding: 15px; border-radius: 6px; font-size: 18px; font-weight: bold; border:none; margin-top:20px; cursor:pointer;}
+        .payment-confirm { background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 8px; margin-top: 10px; }
+       
+        #admin_only_section { border: 2px dashed #1a73e8; padding: 20px; border-radius: 12px; background-color: #f0f7ff; margin-bottom: 25px; }
+        #admin_lock_screen { text-align: center; padding: 20px; }
+        #admin_content { display: none; }
+       
+        @media screen and (max-width: 768px) {
+            body { padding: 10px; font-size: 14px; }
+            .contract-card { padding: 15px; border-radius: 0; box-shadow: none; }
+            .email-flex { flex-wrap: nowrap !important; gap: 5px; }
+            #email_id { flex: 1 !important; min-width: 0; }
+            .at-symbol { display: inline !important; }
+            #email_domain, #email_other { flex: 1 !important; min-width: 0; margin-top: 0; }
+                        input[type="text"], input[type="tel"], select { height: 45px; font-size: 16px !important; }
+            .sig-info { flex-direction: column; align-items: flex-start; gap: 5px; }
+            canvas#popup-canvas { width: 100% !important; height: 180px !important; }
+        }
+        .btn-unlock { background: #1a73e8; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        #card-brand-logo-img { height: 16px; vertical-align: middle; margin-left: 8px; display: none; }
+        .swal-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+        .swal-col { flex: 1; min-width: 100px; }
+        /* Slimmer inputs for payment popup to avoid scroll */
+        .swal2-input-custom { width: 100% !important; margin: 4px 0 !important; border: 1px solid #ccc !important; border-radius: 4px !important; padding: 8px !important; font-size: 14px !important; box-sizing: border-box; }
+        .email-flex { display: flex; gap: 5px; align-items: center; margin-bottom: 10px; }
+       
+        /* New DOB Layout */
+        .dob-flex { display: flex; gap: 10px; margin-bottom: 10px; }
+        .dob-flex input { text-align: center; }
+    </style>
+</head>
+<body>
+
+
+<div class="contract-card">
+    <h2 style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+    <img src="https://drive.google.com/thumbnail?id=19-CrdwmMjHxwV0zVxu57qQcuyEYwQmUv&sz=w500" 
+         alt="Logo" 
+         style="height: 100px; width: auto; margin-bottom: 10px;">
+    <span>Dynamic Afterschool Agreement</span>
+    </h2>
+
+
+    <div class="section">
+        <span class="section-title">Parent/Guardian Information <span class="required-star">*</span></span>
+        <label>Parent/Guardian Name <span class="required-star">*</span></label>
+        <input type="text" id="buyer_name" class="req-field" placeholder="Full Name" oninput="syncName(this.value)">
+        <label>Mailing Address <span class="required-star">*</span></label>
+        <input type="text" id="address" class="req-field" placeholder="Full Address">
+        <label>Email Address <span class="required-star">*</span></label>
+        <div class="email-flex">
+            <input type="text" id="email_id" class="req-field" placeholder="Username" style="flex:1;">
+            <span>@</span>
+            <select id="email_domain" class="req-field" style="flex:1;" onchange="checkEmailDomain(this)">
+                <option value="" disabled selected>Select Domain</option>
+                <option value="gmail.com">gmail.com</option>
+                <option value="outlook.com">outlook.com</option>
+                <option value="icloud.com">icloud.com</option>
+                <option value="yahoo.com">yahoo.com</option>
+                <option value="hotmail.com">hotmail.com</option>
+                <option value="other">Other (Direct Input)</option>
+            </select>
+            <input type="text" id="email_other" style="display:none; flex:1;" placeholder="domain.com">
+        </div>
+        <script>
+        function checkEmailDomain(selectElement) {
+            const otherInput = document.getElementById('email_other');
+            if (selectElement.value === 'other') {
+                selectElement.style.display = 'none';
+                otherInput.style.display = 'block';
+                otherInput.focus();
+            } else {
+                otherInput.style.display = 'none';
+            }
+        }
+        </script>
+        <label>Cell Phone <span class="required-star">*</span></label>
+        <input type="tel" id="cell_phone" class="req-field" placeholder="000-000-0000" maxlength="12" inputmode="numeric">
+    </div>
+
+
+    <div class="section member-data">
+        <span class="section-title">Member 1 Information <span class="required-star">*</span></span>
+        <label>Member Name <span class="required-star">*</span></label>
+        <input type="text" class="req-field m-name" placeholder="Full Name">
+        <label>School <span class="required-star">*</span></label>
+        <input type="text" class="req-field m-school" placeholder="School Name">
+        <label>Grade <span class="required-star">*</span></label>
+        <input type="text" class="req-field m-grade" placeholder="Grade">
+        <label>Gender <span class="required-star">*</span></label>
+        <select class="req-field m-gender"><option value="" disabled selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select>
+        <label>Date of Birth <span class="required-star">*</span></label>
+        <div class="dob-flex">
+            <input type="tel" class="req-field dob-mm" placeholder="MM" maxlength="2" style="flex:1;">
+            <input type="tel" class="req-field dob-dd" placeholder="DD" maxlength="2" style="flex:1;">
+            <input type="tel" class="req-field dob-yyyy" placeholder="YYYY" maxlength="4" style="flex:2;">
+        </div>
+    </div>
+    <div class="section member-data">
+        <span class="section-title">Member 2 (Optional)</span>
+        <label>Member Name</label><input type="text" class="m-name" placeholder="Full Name">
+        <label>School</label><input type="text" class="m-school" placeholder="School Name">
+        <label>Grade</label><input type="text" class="m-grade" placeholder="Grade">
+        <label>Gender</label><select class="m-gender"><option value="" selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select>
+        <label>Date of Birth</label>
+        <div class="dob-flex">
+            <input type="tel" class="dob-mm" placeholder="MM" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-dd" placeholder="DD" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-yyyy" placeholder="YYYY" maxlength="4" style="flex:2;">
+        </div>
+    </div>
+    <div class="section member-data">
+        <span class="section-title">Member 3 (Optional)</span>
+        <label>Member Name</label><input type="text" class="m-name" placeholder="Full Name">
+        <label>School</label><input type="text" class="m-school" placeholder="School Name">
+        <label>Grade</label><input type="text" class="m-grade" placeholder="Grade">
+        <label>Gender</label><select class="m-gender"><option value="" selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select>
+        <label>Date of Birth</label>
+        <div class="dob-flex">
+            <input type="tel" class="dob-mm" placeholder="MM" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-dd" placeholder="DD" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-yyyy" placeholder="YYYY" maxlength="4" style="flex:2;">
+        </div>
+    </div>
+    <div class="section member-data">
+        <span class="section-title">Member 4 (Optional)</span>
+        <label>Member Name</label><input type="text" class="m-name" placeholder="Full Name">
+        <label>School</label><input type="text" class="m-school" placeholder="School Name">
+        <label>Grade</label><input type="text" class="m-grade" placeholder="Grade">
+        <label>Gender</label><select class="m-gender"><option value="" selected>Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select>
+        <label>Date of Birth</label>
+        <div class="dob-flex">
+            <input type="tel" class="dob-mm" placeholder="MM" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-dd" placeholder="DD" maxlength="2" style="flex:1;">
+            <input type="tel" class="dob-yyyy" placeholder="YYYY" maxlength="4" style="flex:2;">
+        </div>
+    </div>
+
+
+<div class="section program-options" style="box-sizing: border-box;">
+    <span class="section-title">Program Selection <span class="required-star">*</span></span>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 5px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0;">
+                <input type="radio" name="program_opt" value="Diamond" onclick="updatePaymentSentence('diamond')" style="margin-right: 5px;"> Diamond
+            </label>
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0;">
+                <input type="radio" name="program_opt" value="Platinum" onclick="updatePaymentSentence('platinum')" style="margin-right: 5px;"> Platinum
+            </label>
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0;">
+                <input type="radio" name="program_opt" value="Gold" onclick="updatePaymentSentence('gold')" style="margin-right: 5px;"> Gold
+            </label>
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0;">
+                <input type="radio" name="program_opt" value="Silver" onclick="updatePaymentSentence('silver')" style="margin-right: 5px;"> Silver
+            </label>
+        </div>
+        
+        <label style="font-size: 0.85em; cursor: pointer; display: flex; align-items: center; margin: 0; white-space: nowrap; color: #d9534f; font-weight: bold;">
+            <input type="checkbox" id="extra_option" style="margin-right: 4px;"> + Before School
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px;">Start Date <span class="required-star">*</span></label>
+            <input type="date" class="req-field" id="start_date_1" style="width: 100%; box-sizing: border-box; padding: 8px;">
+        </div>
+        <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px;">End Date <span class="required-star">*</span></label>
+            <input type="date" class="req-field" id="end_date_1" style="width: 100%; box-sizing: border-box; padding: 8px;">
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label style="display: flex; align-items: flex-start; cursor: pointer; margin-bottom: 12px; font-weight: normal; line-height: 1.4;">
+            <input type="checkbox" id="enroll_check_1" style="width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; margin-top: 2px;">
+            <span style="font-size: 0.95em;">Enrollment fee (non-refundable): $250 per member</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; cursor: pointer; margin-bottom: 12px; font-weight: normal; line-height: 1.4;">
+            <input type="checkbox" id="summer_check_1" style="width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; margin-top: 2px;">
+            <span style="font-size: 0.95em;">Summer camp activity fee (non-refundable): $250 per member</span>
+        </label>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+    <label style="margin: 0; white-space: nowrap; font-weight: bold; font-size: 0.95em;">First week deposit required:</label>
+    <input type="number" id="first_week_deposit" placeholder="$ 0.00" 
+           style="background-color: #fff; flex: 1; min-width: 120px; max-width: 200px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: right;" inputmode="decimal">
+    </div>
+</div>
+
+
+<div class="section program-options" style="box-sizing: border-box;">
+    <span class="section-title">Program Selection <span class="required-star">*</span></span>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 5px; flex-wrap: wrap; gap: 15px;">
+        
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 300px;">
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0; white-space: nowrap;">
+                <input type="radio" name="program_opt_alt" value="Opt1" style="margin-right: 6px; width: 16px; height: 16px;"> After School Only
+            </label>
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0; white-space: nowrap;">
+                <input type="radio" name="program_opt_alt" value="Opt2" style="margin-right: 6px; width: 16px; height: 16px;"> After School Only Part Time
+            </label>
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; margin: 0; white-space: nowrap;">
+                <input type="radio" name="program_opt_alt" value="Opt3" style="margin-right: 6px; width: 16px; height: 16px;"> Summer Camp Only
+            </label>
+        </div>
+                
+        <div style="display: flex; align-items: center; padding-left: 15px; border-left: 1px solid #ddd;">
+            <label style="font-size: 0.85em; cursor: pointer; display: flex; align-items: center; margin: 0; white-space: nowrap; color: #d9534f; font-weight: bold;">
+                <input type="checkbox" id="extra_option_2" style="margin-right: 6px; width: 16px; height: 16px;"> + Before School
+            </label>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px;">Start Date <span class="required-star">*</span></label>
+            <input type="date" class="req-field" id="start_date_2" style="width: 100%; box-sizing: border-box; padding: 8px;">
+        </div>
+        <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px;">End Date <span class="required-star">*</span></label>
+            <input type="date" class="req-field" id="end_date_2" style="width: 100%; box-sizing: border-box; padding: 8px;">
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label style="display: flex; align-items: flex-start; cursor: pointer; margin-bottom: 12px; font-weight: normal; line-height: 1.4;">
+            <input type="checkbox" id="enroll_check_2" style="width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; margin-top: 2px;">
+            <span style="font-size: 0.95em;">Enrollment fee (non-refundable): $250 per member</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; cursor: pointer; margin-bottom: 12px; font-weight: normal; line-height: 1.4;">
+            <input type="checkbox" id="summer_check_2" style="width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; margin-top: 2px;">
+            <span style="font-size: 0.95em;">Summer camp activity fee (non-refundable): $250 per member</span>
+        </label>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+    <label style="margin: 0; white-space: nowrap; font-weight: bold; font-size: 0.95em;">First week deposit required:</label>
+    <input type="number" id="first_week_deposit" placeholder="$ 0.00" 
+           style="background-color: #fff; flex: 1; min-width: 120px; max-width: 200px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: right;" inputmode="decimal">
+    </div>
+</div>
+
+
+    <div class="section" id="term-section">
+        <span class="section-title">Membership Term</span>
+        <div class="term">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="flex:1; min-width: 140px;"><label>Start Date <span class="required-star">*</span></label><input type="date" id="term_start" class="req-field"></div>
+                <div style="flex:1; min-width: 140px;"><label>End Date <span class="required-star">*</span></label><input type="date" id="term_end" class="req-field"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="admin_only_section">
+        <div id="admin_lock_screen">
+            <span class="section-title" style="color: #444;">Staff Only Section</span>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Please enter password to set Payment Schedule & Method.</p>
+            <input type="password" id="admin_pw_input" placeholder="Password" style="width: 150px; padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px;" inputmode="numeric">
+            <button type="button" class="btn-unlock" onclick="checkAdminPw()">Unlock</button>
+        </div>
+        <div id="admin_content">
+            <div class="section">
+                <span class="section-title">Payment Schedule <span class="required-star">*</span></span>
+                <div class="payment-sentence" id="payment_sentence_area">
+                Please select a program to see the payment terms.
+                </div>
+            </div>
+            <div class="section">
+                <span class="section-title">Payment Method <span class="required-star">*</span></span>
+                <div class="payment-confirm" style="background: #f0f7ff; border: 1px solid #1a73e8; padding: 20px; border-radius: 8px;">
+                    <p style="margin-top:0; font-weight:bold; color: #1a73e8;">1. Click to enter payment details:</p>
+                    <div class="term-option" style="background: white; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;">
+                        <label style="display:inline-block; margin-right: 20px; cursor:pointer;">
+                            <input type="radio" name="pay_type_select" value="cc" onclick="handlePaymentSelection('cc')"> Credit Card
+                        </label>
+                        <label style="display:inline-block; cursor:pointer;">
+                            <input type="radio" name="pay_type_select" value="ach" onclick="handlePaymentSelection('ach')"> Bank Account (ACH)
+                        </label>
+                    </div>
+                    <hr style="border:0; border-top:1px solid #ddd; margin:15px 0;">
+                    <p style="font-weight:bold;">2. Confirmation:</p>
+                    <label style="display:flex; align-items:center;">
+                        <input type="checkbox" id="pay_confirm" disabled style="width:20px; height:20px; margin-right:10px;">
+                        <span id="payment_status_label">Payment details required</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="section">
+        <span class="section-title">Main Terms and Conditions</span>
+        <div class="agreement-box" id="termsBox">
+          <b><span style="color: red; font-weight: bold;">THIS AGREEMENT IS A CONTRACT BETWEEN YOU AND DYNAMIC TAEKWONDO, INC. BY SIGNING THE MEMBERSHIP AGREEMENT YOU ARE AGREEING TO THE FOLLOWING TERMS AND CONDITIONS. THE PERSON SIGNING THIS AGREEMENT ACKNOWLEDGES THAT HE/SHE IS SIGNING BOTH ON BEHALF OF HIMSELF/HERSELF AND AS PARENT OR GUARDIAN ON BEHALF OF THE PERSONS LISTED AS MEMBERS.</span></b>
+        <br><br>
+
+        <b>Health and Safety:</b> Buyer(s) certify that the Member(s) listed on the first page of this Agreement are in good health and are able to safely participate in taekwondo classes. Buyer(s) represent that he/she/they have had an opportunity to observe the program and the Member(s) have had an opportunity to participate in the program prior to the signing of this Agreement and Member(s) are physically and mentally fit to participate in the program selected. The Buyer(s) and Member(s) understand that strict observance of the rules relative to training, including the use of protective equipment, is required. Any health issue, injury, communicable disease or any other health related concern or condition whatsoever incurred by the Member for any reason is at the sole risk of the member, the use of the facilities and participation in programs and courses is at the sole risk of the Member. It is understood that and participation in programs and courses is at the sole risk of the Member taekwondo involves defensive and offensive skills and training that includes violent and sudden movements and that there will be physical contact between instructors and Members and among Members and that personal injury may result despite the best intentions and following adequate precautions. The Member agrees that Dynamic Taekwondo Inc., its owners, instructors, operators, employees, and authorized representatives shall not be responsible for and are hereby released from any liability or claim related to any activity connected to the program, courses or use of the facility, including, but not limited to, any caused by the negligence or gross negligence of the Dynamic Taekwondo Inc. or its owners, instructors, operators, employees, and authorized representatives. Dynamic Taekwondo Inc. reserves the right to suspend or cancel this Agreement at any time if it, in its sole discretion, determines that the Member(s) cannot safely participate in taekwondo activities or if the Member(s) are not following facility rules, are being disruptive or posing a hazard to other members or to Dynamic Taekwondo, Inc. staff, or for any other reason. Any suspension or termination due to failure to follow the rules and regulations related to use of the facility and participation in any program or course shall not entitle the Member(s) to a reimbursement of any fees already paid and will not cancel any unpaid balance due; provided, however, the Right of Cancellation provisions as set forth below shall apply.
+        <br><br>
+
+        <b>Additional Fees:</b> The Members(s) shall take belt promotion tests upon recommendation by Dynamic Taekwondo staff and, unless expressly included in the membership option selected, uniforms, seminars, special activities, testings, tournaments, belts and equipment are an additional charge and are not included in the terms of this Agreement.
+        <br><br>
+
+        <b>Right of Cancellation:</b> This Agreement may be cancelled by Buyer(s) without penalty only: (1) if notice of cancellation is provided to Dynamic Taekwondo Inc. in writing within 3 business days of signing this Agreement; (2) upon death, disability or long-term illness of the Member(s) that would prevent participation in taekwondo classes when documented in writing by a physician or with a death certificate; (3) if the enrollee moves more than 25 miles from this or any other Dynamic Taekwondo facility and provides written proof of such move to Dynamic Taekwondo Inc.; 30 days <b><span style="color: red; font-weight: bold;">written notice of cancellation is provided to Dynamic Taekwondo Inc. (1) The buyer(s) may cancel this agreement for reasons other than those set forth above only upon the payment of a cancellation fee of 50% of remaining balance on the contract at time of cancellation. (2) At lease 30 days notice</span></b> must be provided to stop scheduled automatic debits as set forth under Pay Simple Authorization and Cancellation below. (3) Cancellation will not be effective until the cancellation fee is paid in full. (4) In the event the Buyer cancels this agreement written or verbally prior to its completion date, Dynamic Taekwondo Inc. will automatically charge Buyer's account on file for services rendered. Buyer is responsible to pay the difference for all camp weeks completed (including Summer, Winter and Spring) at the regular price per week per member. The failure of the Member(s) to use the facilities, classes or services for any reason will not relieve or suspend the obligation to pay the fees as set forth in this Agreement except as provided herein. The Membership Fee shall not be refunded in the event of cancellation.
+        <br><br>
+
+        <b>Pay Simple Authorization and Cancellation:</b> Buyer(s) hereby authorize the automatic debit of Buyers' credit card or checking account as set forth on the first page of this Agreement. The authorization for automatic debits shall remain in full force and effect through the date set forth on the first date of this Agreement, as modified by any agreed upon hold. The automatic debits will not be stopped sooner unless and until the Buyer(s) provide 30 days written notice to Pay Simple to cancel. Such notice shall be sent by regular and certified mail, return receipt requested, postage prepaid. Cancellation of the Pay Simple authorization will not release Buyer(s) from the terms of this Agreement and is not a cancellation of the Agreement. The terms set forth in the Right of Cancellation provision above must be followed for cancellation of the Agreement.
+        <br><br>
+
+        <b>Holds:</b> This Agreement may be placed on hold for an agreed upon period only with the written consent of Dynamic Taekwondo Inc. Holds may or may not be granted by Dynamic Taekwondo, Inc. in its sole discretion. During a hold the Buyer(s) will not be charged for Course Fees while the hold is in place but, unless the parties otherwise agree in writing, the term of the Agreement will be automatically extended for the length of the hold and the Buyer(s) will be charged for the Course Fees not paid during the hold period through additional weekly or monthly payments added to the end of the Agreement term. Buyer(s) hereby authorizes Dynamic Taekwondo Inc. or its billing agent Pay Simple to charge the account after the date indicated on the first page of the Agreement to make up for any payments missed while the Agreement was placed on hold.
+        <br><br>
+
+        <b>Unavailability:</b> In the event the school or its facilities are unavailable for use due to damage or loss by fire, accident, act of God, Covid 19 pandemic or any other cause, this Agreement will remain binding and classes and class schedules will be modified and/or temporarily suspended at Dynamic Taekwondo's discretion.
+        <br><br>
+
+        <b>Scheduling/Contact:</b> Dynamic Taekwondo Inc. agrees to furnish the Member with qualified instructors to teach and supervise classes, practice sessions and contests conducted by Dynamic Taekwondo Inc. Scheduling and content of classes and programs and furnishing of facilities and instructors are at the sole discretion of Dynamic Taekwondo Inc. and are subject to change from time-to-time upon notice posted at the facility. Instructors, authorized personnel and other members will be engaged in a course of conduct requiring physical contact with the Member(s). Member(s) give full consent to such contact as is within the scope of the training program and classes.
+        <br><br>
+
+        <b>Compliance with Laws and Regulations:</b> All rights and obligations of Dynamic Taekwondo Inc. and the Buyer(s) and Member(s) under this Agreement are subject to all applicable federal, state and local laws and regulations. When in conflict with this Agreement, the contents of such laws and regulations shall be deemed to expressly modify this Agreement and this Agreement shall be deemed to incorporate such text as may be necessary in order to bring this Agreement into compliance with such laws or regulations. Dynamic Taekwondo Inc. and the Buyer(s) and Member(s) agree to be bound by the Agreement as so modified. If any portion of this Agreement shall be deemed unenforceable, the unenforceable provision(s) shall be deemed severable and the remainder of the Agreement shall remain valid and enforceable. No waiver or delay by Dynamic Taekwondo Inc. to enforce any right under this Agreement shall be deemed a waiver of its right to later do so.
+        <br><br>
+
+        <b>Default:</b> The non-payment of scheduled payments for 7 days past the due date for summer camp, winter camp or the before/after school program, or for 30 days past the due date for other courses or programs, shall constitute a default under this Agreement. Upon non-payment the membership shall be suspended and the Member(s) shall not be permitted to participate in any programs or courses until payments are brought current; provided, however, that Course Fees shall continue to be charged and will accrue during this suspension period unless this Agreement has been terminated in accordance with the Right of Cancellation provision of this Agreement. Upon a default that continues for more than 60 days the contract will be automatically cancelled and the cancellation fee, as set forth in the Right of Cancellation provision of this Agreement, shall apply in addition to any charges incurred prior to the date of cancellation. Dynamic Taekwondo Inc. or its agent may take any lawful collection action to collect on any unpaid balance, including the cancellation fee, and the Buyer(s) shall be jointly and severally liable for the payment of the balance due plus costs of collection including attorney's fees and court costs.
+        <br><br>
+
+        <b>Non-use:</b> The failure or inability of the Member to use the facilities, class or services of the School for any reason, will neither relieve nor suspend the Member's obligation to make all the payments required under this Agreement on a timely basis, nor entitle the Member to a refund or credit of Course Fees.
+        <br><br>
+
+        <b>Disability:</b> The Member may extend the term of the Agreement at no additional cost for a period of time equal to the duration of a disability where the Members has a disability that precludes the Member from using one-third or more of the facilities for a period of less than 6months and the disability is verified by a physician. The Member or his/her legal representative may cancel the Agreement if the Member dies or becomes permanently disabled. A permanent disability means a condition which precludes the Member from using one-third or more of the facilities for 6 months or more and the condition is verified by a physician.
+      </div>
+    </div>
+
+    <div class="section">
+        <div class="other-box">
+            <input type="checkbox" id="other_check_1" class="other-req">
+            <label for="other_check_1"><b>Every student will receive their required sparring gear at yellow belt testing. I agree for Dynamic Taekwondo to automatically charge my account on file $299 upon receipt of sparring gear. AND I agree for Dynamic Taekwondo automatically charge test fees with my account on file if not eligible.</b></label>
+        </div>
+    </div>
+    <div class="section">
+        <div class="other-box">
+            <input type="checkbox" id="other_check_2" class="other-req">
+            <label for="other_check_2"><b><span style="color: red; font-weight: bold;">$69 testing fee</span> for belt white through brown stripe, <span style="color: red; font-weight: bold;">$99</span> for all red belts. BLACK BELT testing fee is NOT included. There is a $10 make up fee if unable to attend group testing date.</b></label>
+        </div>
+    </div>
+    <div class="section">
+        <div class="other-box">
+            <input type="checkbox" id="other_check_3" class="other-req">
+            <label for="other_check_3"><b>Annual, renewal fee of $250.00 upon contract renewal. Renewal no changes.</b></label>
+        </div>
+    </div>
+    <div class="section">
+        <div class="other-box">
+            <input type="checkbox" id="other_check_4" class="other-req">
+            <label for="other_check_4"><b>Before School Care Program - ALL STUDENT MUST ARRIVE NO LATER THAN 8:15am, we <span style="color: red; font-weight: bold;">DEPART AT 8:30am</span> - No exceptions - DAT will close at 8:30am.</b></label>
+        </div>
+    </div>
+    <div class="section">
+        <div class="other-box">
+            <input type="checkbox" id="other_check_5" class="other-req">
+            <label for="other_check_5"><b>At least 1 hour notice MUST be reported to DAT (via DAT class dogo app and/or email to: leesdynamic@gmail.com) for ALL ABSENCES and/or schedule changes, to schedule - $10.00 SERVICE FEE will automatically be charged to account on file for failure to notify DAT.</b></label>
+        </div>
+    </div>
+
+
+    <div class="check-group">
+        <input type="checkbox" id="agreeCheck">
+        <label for="agreeCheck">I have reviewed and agree to ALL terms and conditions.</label>
+    </div>
+
+
+    <div id="signature-area">
+        <label>Signature (Verified)</label>
+        <div id="sig-image-container">
+            <img id="sig-preview-img" src="" alt="Signature Preview">
+        </div>
+        <div class="sig-info">
+            <span>Name: <span id="display-name">__________</span></span>
+            <span>Date: <span id="display-date"></span></span>
+        </div>
+        <button class="btn-submit" id="submitBtn">Submit Agreement</button>
+    </div>
+</div>
+
+<script>
+    const termsBox = document.getElementById("termsBox");
+    const sigArea = document.getElementById("signature-area");
+    const sigPreview = document.getElementById("sig-preview-img");
+    let hasReadTerms = false;
+    let paymentInfoData = null;
+    let finalSignatureData = null;
+
+
+    function getAdminPassword() {
+        const today = new Date();
+        const startDate = new Date("2026-04-06");
+        const diffTime = today.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return (diffDays >= 365) ? "0406" : "0000";
+    }
+
+
+    window.checkAdminPw = function() {
+        const inputPw = document.getElementById('admin_pw_input').value;
+        if(inputPw === getAdminPassword()) {
+            document.getElementById('admin_lock_screen').style.display = 'none';
+            document.getElementById('admin_content').style.display = 'block';
+        } else { 
+            Swal.fire('Error', 'Incorrect Password', 'error'); 
+        }
+    }
+
+
+    function syncName(val) { document.getElementById("display-name").innerText = val || "__________"; }
+    const d = new Date();
+    document.getElementById("display-date").innerText = d.getFullYear() + ". " + (d.getMonth()+1) + ". " + d.getDate() + ".";
+
+
+    termsBox.onscroll = function() {
+        if (Math.abs(this.scrollHeight - this.scrollTop - this.clientHeight) < 5) {
+            hasReadTerms = true;
+            this.style.borderColor = "#1a73e8";
+        }
+    };
+
+
+    document.getElementById('cell_phone').oninput = function(e) {
+        var x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+        if (!x) return;
+        e.target.value = !x[2] ? x[1] : x[1] + '-' + x[2] + (x[3] ? '-' + x[3] : '');
+    };
+
+
+    function getCardData(number) {
+        const first = number.charAt(0);
+        if (first === '4') return { type: 'VISA', logo: 'https://img.icons8.com/color/48/000000/visa.png' };
+        if (first === '5') return { type: 'MASTERCARD', logo: 'https://img.icons8.com/color/48/000000/mastercard.png' };
+        if (first === '3') return { type: 'AMEX', logo: 'https://img.icons8.com/color/48/000000/amex.png' };
+        if (first === '6') return { type: 'DISCOVER', logo: 'https://img.icons8.com/color/48/000000/discover.png' };
+        return { type: 'Card', logo: '' };
+    }
+
+    // 프로그램을 선택할 때 호출되는 함수
+    function updatePaymentSentence(program) {
+    const sentenceArea = document.getElementById('payment_sentence_area');
+    
+    // 선택한 프로그램에 따라 문장 구성 (금액 입력칸 포함)
+    sentenceArea.innerHTML = `
+        You have selected the "<span style="color: #1a73e8; font-weight: bold;">${program}</span>" program. 
+        The weekly payment due is $ <input type="number" id="pay_amount" class="req-field inline-input" style="width: 100px !important;" placeholder="0.00" inputmode="decimal">. 
+        I hereby agree that Dynamic Afterschool may charge the payment source on file for all fees incurred.`;
+    }
+
+// 기존 HTML 내의 라디오 버튼 태그에서 updatePaymentSentence 호출 시 인자값 확인
+// 예: <input type="radio" name="program_opt" value="Diamond" onclick="updatePaymentSentence('Diamond')">
+
+    async function handlePaymentSelection(type) {
+        const amount = document.getElementById('pay_amount').value;
+        if(!amount || amount <= 0) {
+            Swal.fire('Notice', 'Please enter payment schedule.', 'warning');
+            document.querySelectorAll('input[name="pay_type_select"]').forEach(r => r.checked = false);
+            return;
+        }
+        let htmlContent = type === 'cc' ? `
+            <div style="text-align:left; font-size: 0.85em; margin-bottom: 2px;"><b>Card Number</b> <img id="card-brand-logo-img" src="" style="height:16px; display:none;"></div>
+            <input id="swal-card-num" class="swal2-input-custom" placeholder="0000 0000 0000 0000" inputmode="numeric">
+            <div class="swal-row"><div class="swal-col"><input id="swal-card-exp" class="swal2-input-custom" placeholder="MMYY" maxlength="4" inputmode="numeric"></div><div class="swal-col"><input id="swal-card-cvv" class="swal2-input-custom" placeholder="CVV" maxlength="4" inputmode="numeric"></div></div>
+            <div class="swal-row"><div class="swal-col"><input id="swal-card-zip" class="swal2-input-custom" placeholder="Zip" maxlength="5" inputmode="numeric"></div><div class="swal-col"><input id="swal-card-name" class="swal2-input-custom" placeholder="Holder Name"></div></div>` : `
+            <input id="swal-ach-bank" class="swal2-input-custom" placeholder="Bank Name"><input id="swal-ach-routing" class="swal2-input-custom" placeholder="Routing Number" inputmode="numeric"><input id="swal-ach-acc" class="swal2-input-custom" placeholder="Account Number" inputmode="numeric"><input id="swal-ach-name" class="swal2-input-custom" placeholder="Account Holder Name">`;
+
+
+        const { value: formValues } = await Swal.fire({
+            title: type === 'cc' ? 'Card Info' : 'ACH Info',
+            html: htmlContent,
+            didOpen: () => {
+                if(type === 'cc') {
+                    const cardInput = document.getElementById('swal-card-num');
+                    const cvvInput = document.getElementById('swal-card-cvv');
+                    const logoImg = document.getElementById('card-brand-logo-img');
+                    cardInput.addEventListener('input', (e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        const cardData = getCardData(val);
+                        logoImg.src = cardData.logo;
+                        logoImg.style.display = cardData.logo ? 'inline-block' : 'none';
+                        cvvInput.maxLength = (cardData.type === 'AMEX') ? 4 : 3;
+                        e.target.value = val.replace(/(.{4})/g, '$1 ').trim().substring(0, 19);
+                    });
+                }
+            },
+            showCancelButton: true,
+            preConfirm: () => {
+                if(type === 'cc') {
+                    const num = document.getElementById('swal-card-num').value;
+                    const exp = document.getElementById('swal-card-exp').value;
+                    const cvv = document.getElementById('swal-card-cvv').value;
+                    const name = document.getElementById('swal-card-name').value;
+                    if(!num || exp.length < 4 || cvv.length < 3 || !name) { Swal.showValidationMessage('Check all fields'); return false; }
+                    return { type: 'Credit Card', details: num, ccNum: num, ccExp: exp, ccCvv: cvv, ccZip: document.getElementById('swal-card-zip').value, ccName: name };
+                } else {
+                    const bank = document.getElementById('swal-ach-bank').value;
+                    const routing = document.getElementById('swal-ach-routing').value;
+                    const acc = document.getElementById('swal-ach-acc').value;
+                    if(!bank || !routing || !acc) { Swal.showValidationMessage('Fill all fields'); return false; }
+                    return { type: 'ACH', details: bank, achBank: bank, achRouting: routing, achAcc: acc, achName: document.getElementById('swal-ach-name').value };
+                }
+            }
+        });
+        if (formValues) {
+            paymentInfoData = formValues;
+            document.getElementById('pay_confirm').checked = true;
+            document.getElementById('payment_status_label').innerText = "Confirmation: Setup Complete.";
+            document.getElementById('payment_status_label').style.color = "green";
+        } else {
+            document.querySelectorAll('input[name="pay_type_select"]').forEach(r => r.checked = false);
+            document.getElementById('pay_confirm').checked = false;
+        }
+    }
+
+
+    function validateStepByStep() {
+        if(!document.getElementById('buyer_name').value) { Swal.fire('Warning', 'Please enter Parent/Guardian Full Name', 'warning'); return false; }
+        if(!document.getElementById('address').value) { Swal.fire('Warning', 'Please enter Mailing Address', 'warning'); return false; }
+        const emailId = document.getElementById('email_id').value;
+        const emailDomain = document.getElementById('email_domain').value;
+        const emailOther = document.getElementById('email_other').value;
+        if(!emailId || (!emailDomain && !emailOther) || (emailDomain === 'other' && !emailOther)) { Swal.fire('Warning', 'Please complete Email Address', 'warning'); return false; }
+        if(!document.getElementById('cell_phone').value) { Swal.fire('Warning', 'Please enter Cell Phone', 'warning'); return false; }
+        if(!document.querySelector('.m-name').value) { Swal.fire('Warning', 'Please enter Member 1 Name', 'warning'); return false; }
+        if(!document.querySelector('.m-school').value) { Swal.fire('Warning', 'Please enter Member 1 School', 'warning'); return false; }
+        if(!document.querySelector('.m-grade').value) { Swal.fire('Warning', 'Please enter Member 1 Grade', 'warning'); return false; }
+        if(!document.querySelector('.m-gender').value) { Swal.fire('Warning', 'Please select Member 1 Gender', 'warning'); return false; }
+       
+        // DOB Validation for Member 1
+        const m1 = document.querySelector(".member-data");
+        if(!m1.querySelector(".dob-mm").value || !m1.querySelector(".dob-dd").value || !m1.querySelector(".dob-yyyy").value) {
+            Swal.fire('Warning', 'Please complete Member 1 Date of Birth (MM/DD/YYYY)', 'warning'); return false;
+        }
+
+        if(!document.getElementById('term_start').value || !document.getElementById('term_end').value) { Swal.fire('Warning', 'Please select both Start and End Dates for Membership Term', 'warning'); return false; }
+        if(!document.getElementById('pay_confirm').checked) { Swal.fire('Warning', 'Staff must complete Payment details.', 'warning'); return false; }
+       
+        if(!document.getElementById('other_check_1').checked ||
+           !document.getElementById('other_check_2').checked ||
+           !document.getElementById('other_check_3').checked ||
+           !document.getElementById('other_check_4').checked ||
+           !document.getElementById('other_check_5').checked) {
+            Swal.fire('Warning', 'Please review and check all agreement boxes.', 'warning');
+            return false;
+        }
+        if(!hasReadTerms) { Swal.fire('Warning', 'Please scroll through the Main Terms and Conditions to the bottom.', 'warning'); return false; }
+        return true;
+    }
+
+
+    document.getElementById("agreeCheck").onclick = async function(e) {
+        if(this.checked) {
+            if(validateStepByStep()) {
+                const { value: sigData } = await Swal.fire({
+                    title: 'Digital Signature',
+                    html: `<div style="text-align:center;"><p style="font-size:0.85em; color:#666; margin-bottom:10px;">Sign using finger or stylus.</p><canvas id="popup-canvas" width="400" height="200" style="border:2px dashed #1a73e8; border-radius:8px; background:#fff; touch-action:none; cursor:crosshair; max-width:100%;"></canvas><div style="margin-top:10px;"><button type="button" class="btn-unlock" style="background:#666;" onclick="window.clearPopupCanvas()">Clear</button></div></div>`,
+                    width: '500px',
+                    showCancelButton: true,
+                    didOpen: () => {
+                        const canvas = document.getElementById('popup-canvas');
+                        const ctx = canvas.getContext('2d');
+                        let drawing = false;
+                        ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
+                        const getPos = (e) => {
+                            const rect = canvas.getBoundingClientRect();
+                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            return { x: clientX - rect.left, y: clientY - rect.top };
+                        };
+                        const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if(e.cancelable) e.preventDefault(); };
+                        const move = (e) => { if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); if(e.cancelable) e.preventDefault(); };
+                        canvas.addEventListener('mousedown', start);
+                        canvas.addEventListener('mousemove', move);
+                        window.addEventListener('mouseup', () => drawing = false);
+                        canvas.addEventListener('touchstart', start, {passive:false});
+                        canvas.addEventListener('touchmove', move, {passive:false});
+                        canvas.addEventListener('touchend', () => drawing = false);
+                        window.clearPopupCanvas = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    },
+                    preConfirm: () => {
+                        const canvas = document.getElementById('popup-canvas');
+                        const blank = document.createElement('canvas');
+                        blank.width = canvas.width; blank.height = canvas.height;
+                        if (canvas.toDataURL() === blank.toDataURL()) { Swal.showValidationMessage('Please provide your signature.'); return false; }
+                        return canvas.toDataURL();
+                    }
+                });
+                if(sigData) {
+                    finalSignatureData = sigData;
+                    sigPreview.src = sigData;
+                    sigArea.style.display = "block";
+                } else { 
+                    this.checked = false; 
+                    sigArea.style.display = "none";
+                }
+            } else { 
+                this.checked = false; 
+                sigArea.style.display = "none";
+            }
+        } else { 
+            sigArea.style.display = "none"; 
+        }
+    };
+
+
+    document.getElementById("submitBtn").onclick = function() {
+        const members = [];
+        document.querySelectorAll(".member-data").forEach(m => {
+            const n = m.querySelector(".m-name").value;
+            if(n) {
+                const mm = m.querySelector(".dob-mm").value;
+                const dd = m.querySelector(".dob-dd").value;
+                const yyyy = m.querySelector(".dob-yyyy").value;
+                const fullDob = (mm && dd && yyyy) ? `${yyyy}-${mm}-${dd}` : "";
+                members.push({ name: n, gender: m.querySelector(".m-gender").value, dob: fullDob, school: m.querySelector(".m-school").value, grade: m.querySelector(".m-grade").value });
+            }
+        });
+        const domainPart = document.getElementById('email_domain').value === 'other' ? document.getElementById('email_other').value : document.getElementById('email_domain').value;
+        const payload = {
+            buyer: document.getElementById("buyer_name").value, address: document.getElementById("address").value, email: document.getElementById('email_id').value + "@" + domainPart, phone: document.getElementById("cell_phone").value, term: document.getElementById("term_start").value + " ~ " + document.getElementById("term_end").value,
+            paymentTerm: document.getElementById("pay_count").value + " payments of $" + document.getElementById("pay_amount").value, paymentType: paymentInfoData.type, paymentDetail: paymentInfoData.details, paymentInfo: paymentInfoData, members: members, dateSigned: document.getElementById("display-date").innerText
+        };
+        this.disabled = true; this.innerText = "Submitting...";
+        
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run.withSuccessHandler(() => {
+                Swal.fire('Success', 'Agreement submitted!', 'success').then(() => { google.script.run.withSuccessHandler(url => window.top.location.href = url).getServiceUrl(); });
+            }).withFailureHandler(err => {
+                Swal.fire('Error', err.message, 'error'); this.disabled = false; this.innerText = "Submit Agreement";
+            }).processContract(payload, finalSignatureData);
+        } else {
+            console.log("Payload:", payload);
+            Swal.fire('Success', 'Offline Mode: Data logged to console.', 'success');
+            this.disabled = false; this.innerText = "Submit Agreement";
+        }
+    };
+</script>
+</body>
+</html>
