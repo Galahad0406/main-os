@@ -167,7 +167,7 @@ function AppleCalendar({
             >
               {day}
               {hasEvent && !isSelected && (
-                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[#0071E3]" />
+                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
               )}
             </button>
           );
@@ -401,7 +401,7 @@ export default function App() {
   };
 
   const today = new Date();
-  const todayFormatted = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const todayFormatted = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" });
 
   return (
     <div
@@ -429,8 +429,8 @@ export default function App() {
               <Award className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-[13px] font-semibold text-[#1D1D1F] leading-tight">Dynamic HQ</p>
-              <p className="text-[10px] text-[#AEAEB2]">Academy OS</p>
+              <p className="text-[13px] font-semibold text-[#1D1D1F] leading-tight">Dynamic After School & Taekwondo</p>
+              <p className="text-[10px] text-[#AEAEB2]">Admin OS</p>
             </div>
           </div>
         </div>
